@@ -301,7 +301,8 @@ async def on_message(message):
         for i in bad_words:
             if i in m:
                 await message.channel.purge(limit=1)
-    coll.update_one({"_id": id}, {"$set": {"balance": bal + 1, "messages": messages + 1}})
+    messages = messages + 1
+    coll.update_one({"_id": id}, {"$set": {"balance": bal + 1, "messages": messages}})
 
     for i in all_lists:
         for u in i:
