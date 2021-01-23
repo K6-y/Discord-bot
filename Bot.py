@@ -4,6 +4,7 @@ import asyncio
 from pymongo import MongoClient
 from random import randint
 import datetime
+from words import *
 
 bad_words = []
 
@@ -260,30 +261,38 @@ async def roll(ctx, limit):
 @bot.event
 async def on_message(message):
     await bot.process_commands(message)
+    if message.author == bot.user:
+        return
+
     id = message.author.id
     if coll.count_documents({"_id": id}) == 0:
         coll.insert_one({"_id": id, "name": message.author.display_name, "balance": 0, "messages": 0})
+
     messages = coll.find_one({"_id": id})["messages"]
     bal = coll.find_one({"_id": id})["balance"]
     s = 0
     msg = message.content.lower()
+    m = message.content.lower()
     del_sym = [".", ",", "^", "`", "~", "'", '"', "-", "_", "=", " "]
+
     for u in del_sym:
         s += 1
-        if u in msg:
-            msg = msg.replace(u, "")
+        if u in m:
+            m = m.replace(u, "")
     if s == len(del_sym):
         for i in bad_words:
-            if i in msg:
+            if i in m:
                 await message.channel.purge(limit=1)
     coll.update_one({"_id": id}, {"$set": {"balance": bal + 1, "messages": messages + 1}})
 
-
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        await ctx.send("Такой команды не существует!")
-
+    for i in all_lists:
+        for u in i:
+            if u in msg:
+                ind = all_lists.index(i)
+                answ = all_answ[ind]
+                r = randint(0, len(answ) - 1)
+                answer = answ[r]
+                await message.channel.send(answer)
 
 # Токен
 bot.run(Settings.token)
