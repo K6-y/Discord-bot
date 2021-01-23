@@ -187,7 +187,28 @@ async def repup_error(ctx, error):
         await ctx.send("Вы не можете вызывать эту команду чаще чем раз в пол часа.")
 
 
-# Игра в кости
+@bot.command(aliases=[])
+async def transfer(ctx, limit: int, member: discord.Member):
+    a_id = ctx.author.id
+    m_id = member.id
+    if coll.count_documents({"_id": a_id}) == 1:
+        bal = coll.find_one({"_id": a_id})["balance"]
+        if bal - limit < 0:
+            await ctx.send("Недостаточно баллов!")
+        else:
+            if coll.count_documents({"_id": a_id}) == 0:
+                coll.insert_one({"_id": a_id, "name": user, "balance": 0, "messages": 0})
+            bal_2 = coll.find_one({"_id": m_id})["balance"]
+            bal = bal - limit
+            bal_2 = bal_2 + limit
+            coll.update_one({"_id": a_id}, {"$set": {"balance": bal}})
+            coll.update_one({"_id": m_id}, {"$set": {"balance": bal_2}})
+            await ctx.message.add_reaction('✅')
+    else:
+        coll.insert_one({"_id": a_id, "name": user, "balance": 0, "messages": 0})
+        await ctx.send("У тебя 0 баллов!")
+
+
 @bot.command(aliases=["dices"])
 async def dice(ctx, limit):
     m_id = ctx.author.id
@@ -293,6 +314,7 @@ async def on_message(message):
                 r = randint(0, len(answ) - 1)
                 answer = answ[r]
                 await message.channel.send(answer)
+
 
 # Токен
 bot.run(Settings.token)
