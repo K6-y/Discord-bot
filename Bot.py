@@ -196,17 +196,14 @@ async def transfer(ctx, limit: int, member: discord.Member):
         if bal - limit < 0:
             await ctx.send("Недостаточно баллов!")
         else:
-            if coll.count_documents({"_id": a_id}) == 0:
-                coll.insert_one({"_id": a_id, "name": user, "balance": 0, "messages": 0})
+            if coll.count_documents({"_id": m_id}) == 0:
+                coll.insert_one({"_id": m_id, "name": member.display_name, "balance": 0, "messages": 0})
             bal_2 = coll.find_one({"_id": m_id})["balance"]
             bal = bal - limit
             bal_2 = bal_2 + limit
             coll.update_one({"_id": a_id}, {"$set": {"balance": bal}})
             coll.update_one({"_id": m_id}, {"$set": {"balance": bal_2}})
             await ctx.message.add_reaction('✅')
-    else:
-        coll.insert_one({"_id": a_id, "name": user, "balance": 0, "messages": 0})
-        await ctx.send("У тебя 0 баллов!")
 
 
 @bot.command(aliases=["dices"])
