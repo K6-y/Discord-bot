@@ -6,7 +6,7 @@ from random import randint
 import datetime
 from words import *
 
-bad_words = []
+bad_words = []  # Запрещенные слова
 
 
 class Settings:
@@ -37,7 +37,7 @@ async def time(ctx):
     day = str(dt).split(" ")[0]
     time = str(dt).split(" ")[1].split(".")[0]
     emb = discord.Embed(title="Дата", description=day, color=0xff0000)
-    emb.add_field(name="Время [GMT + 06:00]", value=time, inline=False)
+    emb.add_field(name="Время [Часовой пояс]", value=time, inline=False)
     await ctx.send(embed=emb)
 
 
@@ -49,6 +49,7 @@ async def helpme(ctx):
     emb.add_field(name="!info", value="Информация об участнике на сервере\n[Пример: !info @name]")
     emb.add_field(name="!repup (!rep)", value="Благодарность за помощь\n[Пример: !rep @name]")
     emb.add_field(name="!balance - Баланс баллов", value="[Пример: !balance]")
+    emb.add_field(name="!datetime - Текущее время и дата", value="[Пример: !datetime]")
     emb.add_field(name="!dice(s) - Игра в кости",
                   value="Побеждает тот, у кого сумма кубиков больше\n[Пример: !dice 100]")
     emb.add_field(name="!roll - Рулетка", value="Чётное число - победа,\nнечётное - проигрыш\n[Пример: !roll 100]")
@@ -204,6 +205,9 @@ async def transfer(ctx, limit: int, member: discord.Member):
             coll.update_one({"_id": a_id}, {"$set": {"balance": bal}})
             coll.update_one({"_id": m_id}, {"$set": {"balance": bal_2}})
             await ctx.message.add_reaction('✅')
+    else:
+        coll.insert_one({"_id": a_id, "name": user, "balance": 0, "messages": 0})
+        await ctx.send("У тебя 0 баллов!")
 
 
 @bot.command(aliases=["dices"])
@@ -284,7 +288,7 @@ async def on_message(message):
 
     id = message.author.id
     if coll.count_documents({"_id": id}) == 0:
-        coll.insert_one({"_id": id, "name": message.author.display_name, "balance": 0, "messages": 0})
+        coll.insert_one({"_id": id, "name": mdessage.author.display_name, "balance": 0, "messages": 0})
 
     messages = coll.find_one({"_id": id})["messages"]
     bal = coll.find_one({"_id": id})["balance"]
@@ -313,6 +317,38 @@ async def on_message(message):
                 r = randint(0, len(answ) - 1)
                 answer = answ[r]
                 await message.channel.send(answer)
+
+
+# Токен
+bot.run(Settings.token)
+
+
+@bot.event
+async def on_message(message):
+    await bot.process_commands(message)
+    id = message.author.id
+    if coll.count_documents({"_id": id}) == 0:
+        coll.insert_one({"_id": id, "name": message.author.display_name, "balance": 0, "messages": 0})
+    messages = coll.find_one({"_id": id})["messages"]
+    bal = coll.find_one({"_id": id})["balance"]
+    s = 0
+    msg = message.content.lower()
+    del_sym = [".", ",", "^", "`", "~", "'", '"', "-", "_", "=", " "]
+    for u in del_sym:
+        s += 1
+        if u in msg:
+            msg = msg.replace(u, "")
+    if s == len(del_sym):
+        for i in bad_words:
+            if i in msg:
+                await message.channel.purge(limit=1)
+    coll.update_one({"_id": id}, {"$set": {"balance": bal + 1, "messages": messages + 1}})
+
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send("Такой команды не существует!")
 
 
 # Токен
