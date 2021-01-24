@@ -6,6 +6,7 @@ from random import randint
 import datetime
 from words import *
 
+
 bad_words = []  # Запрещенные слова
 
 
