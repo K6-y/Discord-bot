@@ -33,6 +33,45 @@ async def on_ready():
     print(" Бот вошел как: {0.user}".format(bot))
 
 
+@bot.event
+async def on_voice_state_update(member, after):
+    if after.channel != None:
+        if after.channel.id == <id>:
+            for guild in bot.guilds:
+                ch_category = discord.utils.get(guild.categories, id= <category id>)
+                channel_2 = await guild.create_voice_channel(name=f"{member.display_name}", category=ch_category)
+                await channel_2.set_permissions(member, connect=True, manage_channels=True)
+                await member.move_to(channel_2)
+
+            def check(q, w, s):
+                return len(channel_2.members) == 0
+
+            await bot.wait_for("voice_state_update", check=check)
+            await channel_2.delete()
+
+
+@bot.event
+async def on_message(message):
+    await bot.process_commands(message)
+    id = message.author.id
+    if coll.count_documents({"_id": id}) == 0:
+        coll.insert_one({"_id": id, "name": message.author.display_name, "balance": 0, "messages": 0})
+    messages = coll.find_one({"_id": id})["messages"]
+    bal = coll.find_one({"_id": id})["balance"]
+    s = 0
+    msg = message.content.lower()
+    del_sym = [".", ",", "^", "`", "~", "'", '"', "-", "_", "=", " "]
+    for u in del_sym:
+        s += 1
+        if u in msg:
+            msg = msg.replace(u, "")
+    if s == len(del_sym):
+        for i in bad_words:
+            if i in msg:
+                await message.channel.purge(limit=1)
+    coll.update_one({"_id": id}, {"$set": {"balance": bal + 1, "messages": messages + 1}})
+
+
 @bot.command(aliasess=[])
 async def news(ctx):
     res = requests.get("https://news.rambler.ru")
@@ -331,10 +370,6 @@ async def on_message(message):
                 r = randint(0, len(answ) - 1)
                 answer = answ[r]
                 await message.channel.send(answer)
-
-
-# Токен
-bot.run(Settings.token)
 
 
 @bot.event
