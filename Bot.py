@@ -5,7 +5,8 @@ from pymongo import MongoClient
 from random import randint
 import datetime
 from words import *
-
+from bs4 import BeautifulSoup
+import requests
 
 bad_words = []  # Запрещенные слова
 
@@ -32,6 +33,17 @@ async def on_ready():
     print(" Бот вошел как: {0.user}".format(bot))
 
 
+@bot.command(aliasess=[])
+async def news(ctx):
+    res = requests.get("https://news.rambler.ru")
+    html = res.text
+    soup = BeautifulSoup(html, "lxml")
+    top_news = soup.find("div", class_="top-hot-card__title")
+    top = top_news.text
+    emb = discord.Embed(title="Новость дня:", description=top, color=0xff0000)
+    await ctx.send(embed=emb)
+
+
 @bot.command(aliases=["day", "datetime"])
 async def time(ctx):
     dt = datetime.datetime.now()
@@ -50,10 +62,10 @@ async def helpme(ctx):
     emb.add_field(name="!info", value="Информация об участнике на сервере\n[Пример: !info @name]")
     emb.add_field(name="!repup (!rep)", value="Благодарность за помощь\n[Пример: !rep @name]")
     emb.add_field(name="!balance - Баланс баллов", value="[Пример: !balance]")
-    emb.add_field(name="!datetime - Текущее время и дата", value="[Пример: !datetime]")
     emb.add_field(name="!dice(s) - Игра в кости",
                   value="Побеждает тот, у кого сумма кубиков больше\n[Пример: !dice 100]")
-    emb.add_field(name="!roll - Рулетка", value="Чётное число - победа,\nнечётное - проигрыш\n[Пример: !roll 100]")
+    emb.add_field(name="!roll - Рулетка", value="Нечётное число - победа,\nчётное - проигрыш\n[Пример: !roll 100]")
+    emb.add_field(name="!news", value="Новость дня [Пример: !news]", inline=True)
     await ctx.send(embed=emb)
 
 
@@ -79,7 +91,7 @@ async def info(ctx, member: discord.Member):
         old = False
     m_id = member.id
     if coll.count_documents({"_id": m_id}) == 0:
-        coll.insert_one({"_id": m_id, "name": user, "balance": 0, "messages": 0, "sen": 0})
+        coll.insert_one({"_id": m_id, "name": user, "balance": 0, "messages": 0})
     bal = coll.find_one({"_id": m_id})["balance"]
     msg = coll.find_one({"_id": m_id})["messages"]
 
@@ -193,6 +205,7 @@ async def repup_error(ctx, error):
 async def transfer(ctx, limit: int, member: discord.Member):
     a_id = ctx.author.id
     m_id = member.id
+    user = ctx.author.display_name
     if coll.count_documents({"_id": a_id}) == 1:
         bal = coll.find_one({"_id": a_id})["balance"]
         if bal - limit < 0:
@@ -289,7 +302,7 @@ async def on_message(message):
 
     id = message.author.id
     if coll.count_documents({"_id": id}) == 0:
-        coll.insert_one({"_id": id, "name": mdessage.author.display_name, "balance": 0, "messages": 0})
+        coll.insert_one({"_id": id, "name": message.author.display_name, "balance": 0, "messages": 0})
 
     messages = coll.find_one({"_id": id})["messages"]
     bal = coll.find_one({"_id": id})["balance"]
