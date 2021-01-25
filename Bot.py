@@ -36,9 +36,10 @@ async def on_ready():
 @bot.event
 async def on_voice_state_update(member, after):
     if after.channel != None:
-        if after.channel.id == <id>:
+        if after.channel.id == < id >:
             for guild in bot.guilds:
-                ch_category = discord.utils.get(guild.categories, id= <category id>)
+                ch_category = discord.utils.get(guild.categories, id= < category
+                id >)
                 channel_2 = await guild.create_voice_channel(name=f"{member.display_name}", category=ch_category)
                 await channel_2.set_permissions(member, connect=True, manage_channels=True)
                 await member.move_to(channel_2)
@@ -53,23 +54,40 @@ async def on_voice_state_update(member, after):
 @bot.event
 async def on_message(message):
     await bot.process_commands(message)
+    if message.author == bot.user:
+        return
+
     id = message.author.id
     if coll.count_documents({"_id": id}) == 0:
         coll.insert_one({"_id": id, "name": message.author.display_name, "balance": 0, "messages": 0})
+
     messages = coll.find_one({"_id": id})["messages"]
     bal = coll.find_one({"_id": id})["balance"]
     s = 0
     msg = message.content.lower()
+    m = message.content.lower()
     del_sym = [".", ",", "^", "`", "~", "'", '"', "-", "_", "=", " "]
+
     for u in del_sym:
         s += 1
-        if u in msg:
-            msg = msg.replace(u, "")
+        if u in m:
+            m = m.replace(u, "")
     if s == len(del_sym):
         for i in bad_words:
-            if i in msg:
+            if i in m:
                 await message.channel.purge(limit=1)
-    coll.update_one({"_id": id}, {"$set": {"balance": bal + 1, "messages": messages + 1}})
+    messages = int(messages) + 1
+    bal = int(bal) + 1
+    coll.update_one({"_id": id}, {"$set": {"balance": bal, "messages": messages}})
+
+    for i in all_lists:
+        for u in i:
+            if u in msg:
+                ind = all_lists.index(i)
+                answ = all_answ[ind]
+                r = randint(0, len(answ) - 1)
+                answer = answ[r]
+                await message.channel.send(answer)
 
 
 @bot.command(aliasess=[])
@@ -331,67 +349,6 @@ async def roll(ctx, limit):
     else:  # Если участника нет в базе
         coll.insert_one({"_id": m_id, "name": user, "balance": 0, "messages": 0})
         await ctx.send("У тебя 0 баллов!")
-
-
-@bot.event
-async def on_message(message):
-    await bot.process_commands(message)
-    if message.author == bot.user:
-        return
-
-    id = message.author.id
-    if coll.count_documents({"_id": id}) == 0:
-        coll.insert_one({"_id": id, "name": message.author.display_name, "balance": 0, "messages": 0})
-
-    messages = coll.find_one({"_id": id})["messages"]
-    bal = coll.find_one({"_id": id})["balance"]
-    s = 0
-    msg = message.content.lower()
-    m = message.content.lower()
-    del_sym = [".", ",", "^", "`", "~", "'", '"', "-", "_", "=", " "]
-
-    for u in del_sym:
-        s += 1
-        if u in m:
-            m = m.replace(u, "")
-    if s == len(del_sym):
-        for i in bad_words:
-            if i in m:
-                await message.channel.purge(limit=1)
-    messages = int(messages) + 1
-    bal = int(bal) + 1
-    coll.update_one({"_id": id}, {"$set": {"balance": bal, "messages": messages}})
-
-    for i in all_lists:
-        for u in i:
-            if u in msg:
-                ind = all_lists.index(i)
-                answ = all_answ[ind]
-                r = randint(0, len(answ) - 1)
-                answer = answ[r]
-                await message.channel.send(answer)
-
-
-@bot.event
-async def on_message(message):
-    await bot.process_commands(message)
-    id = message.author.id
-    if coll.count_documents({"_id": id}) == 0:
-        coll.insert_one({"_id": id, "name": message.author.display_name, "balance": 0, "messages": 0})
-    messages = coll.find_one({"_id": id})["messages"]
-    bal = coll.find_one({"_id": id})["balance"]
-    s = 0
-    msg = message.content.lower()
-    del_sym = [".", ",", "^", "`", "~", "'", '"', "-", "_", "=", " "]
-    for u in del_sym:
-        s += 1
-        if u in msg:
-            msg = msg.replace(u, "")
-    if s == len(del_sym):
-        for i in bad_words:
-            if i in msg:
-                await message.channel.purge(limit=1)
-    coll.update_one({"_id": id}, {"$set": {"balance": bal + 1, "messages": messages + 1}})
 
 
 @bot.event
