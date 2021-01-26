@@ -42,7 +42,7 @@ async def on_voice_state_update(member, before, after):
                 await channel_2.set_permissions(member, connect=True, manage_channels=True)
                 await member.move_to(channel_2)
 
-            def check():
+            def check(x, y, z):
                 return len(channel_2.members) == 0
 
             await bot.wait_for("voice_state_update", check=check)
