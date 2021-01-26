@@ -4,23 +4,22 @@ import asyncio
 from pymongo import MongoClient
 from random import randint
 import datetime
-from words import *
 from bs4 import BeautifulSoup
 import requests
 
-bad_words = []  # Запрещенные слова
+bad_words = []
 
 
 class Settings:
-    token = ""
+    token = "NzgyMDc2NzY0Mzg1OTY4MTM4.X8G7vg.T9fwCxhMWTfnTxmEFvuKhKFZd90"
     bot = commands.Bot(command_prefix="!")
 
 
 try:
     base = MongoClient(
         "mongodb+srv://<login>:<password>@cluster0.zhcp1.mongodb.net/DisData?retryWrites=true&w=majority")
-    db = base["DisBase"]
-    coll = db["discord1"]
+    db = base["<base_name>"]
+    coll = db["<collection_name>"]
     print("MongoDB connected")
 except:
     print("Not connect to MongoDB")
@@ -34,17 +33,16 @@ async def on_ready():
 
 
 @bot.event
-async def on_voice_state_update(member, after):
+async def on_voice_state_update(member, before, after):
     if after.channel != None:
-        if after.channel.id == < id >:
+        if after.channel.id == <channel_id>:
             for guild in bot.guilds:
-                ch_category = discord.utils.get(guild.categories, id= < category
-                id >)
+                ch_category = discord.utils.get(guild.categories, id=<category_id>)
                 channel_2 = await guild.create_voice_channel(name=f"{member.display_name}", category=ch_category)
                 await channel_2.set_permissions(member, connect=True, manage_channels=True)
                 await member.move_to(channel_2)
 
-            def check(q, w, s):
+            def check():
                 return len(channel_2.members) == 0
 
             await bot.wait_for("voice_state_update", check=check)
@@ -80,15 +78,6 @@ async def on_message(message):
     bal = int(bal) + 1
     coll.update_one({"_id": id}, {"$set": {"balance": bal, "messages": messages}})
 
-    for i in all_lists:
-        for u in i:
-            if u in msg:
-                ind = all_lists.index(i)
-                answ = all_answ[ind]
-                r = randint(0, len(answ) - 1)
-                answer = answ[r]
-                await message.channel.send(answer)
-
 
 @bot.command(aliasess=[])
 async def news(ctx):
@@ -97,7 +86,7 @@ async def news(ctx):
     soup = BeautifulSoup(html, "lxml")
     top_news = soup.find("div", class_="top-hot-card__title")
     top = top_news.text
-    emb = discord.Embed(title="Новость дня:", description=top, color=0xff0000)
+    emb = discord.Embed(title=top, description="Новость дня", color=0xff0000)
     await ctx.send(embed=emb)
 
 
@@ -107,7 +96,7 @@ async def time(ctx):
     day = str(dt).split(" ")[0]
     time = str(dt).split(" ")[1].split(".")[0]
     emb = discord.Embed(title="Дата", description=day, color=0xff0000)
-    emb.add_field(name="Время [Часовой пояс]", value=time, inline=False)
+    emb.add_field(name="Время [GMT + 06:00]", value=time, inline=False)
     await ctx.send(embed=emb)
 
 
@@ -121,8 +110,8 @@ async def helpme(ctx):
     emb.add_field(name="!balance - Баланс баллов", value="[Пример: !balance]")
     emb.add_field(name="!dice(s) - Игра в кости",
                   value="Побеждает тот, у кого сумма кубиков больше\n[Пример: !dice 100]")
-    emb.add_field(name="!roll - Рулетка", value="Нечётное число - победа,\nчётное - проигрыш\n[Пример: !roll 100]")
-    emb.add_field(name="!news", value="Новость дня [Пример: !news]", inline=True)
+    emb.add_field(name="!roll - Рулетка", value="Чётное число - победа,\nнечётное - проигрыш\n[Пример: !roll 100]")
+    emb.add_field(name="!news - Новость дня", value="[Пример: !news]")
     await ctx.send(embed=emb)
 
 
@@ -148,7 +137,7 @@ async def info(ctx, member: discord.Member):
         old = False
     m_id = member.id
     if coll.count_documents({"_id": m_id}) == 0:
-        coll.insert_one({"_id": m_id, "name": user, "balance": 0, "messages": 0})
+        coll.insert_one({"_id": m_id, "name": user, "balance": 0, "messages": 0, "sen": 0})
     bal = coll.find_one({"_id": m_id})["balance"]
     msg = coll.find_one({"_id": m_id})["messages"]
 
@@ -211,8 +200,8 @@ async def ban(ctx, member: discord.Member, reason):
 @commands.has_permissions(administrator=True)
 async def mute(ctx, limit, member: discord.Member):
     await ctx.message.add_reaction('✅')
-    m_role = discord.utils.get(ctx.message.guild.roles, name="")
-    o_role = discord.utils.get(ctx.message.guild.roles, name="")
+    m_role = discord.utils.get(ctx.message.guild.roles, name="role_name")
+    o_role = discord.utils.get(ctx.message.guild.roles, name="role_name")
     await member.add_roles(m_role)
     await member.remove_roles(o_role)
 
