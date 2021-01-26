@@ -7,19 +7,19 @@ import datetime
 from bs4 import BeautifulSoup
 import requests
 
-bad_words = []
+bad_words = []#Слова для фильтрации
 
-
+#Настройки бота
 class Settings:
     token = ""
     bot = commands.Bot(command_prefix="!")
 
-
+#Подключение к БД
 try:
     base = MongoClient(
         "mongodb+srv://<login>:<password>@cluster0.zhcp1.mongodb.net/DisData?retryWrites=true&w=majority")
-    db = base["DisBase"]
-    coll = db["discord1"]
+    db = base["<base_name>"]
+    coll = db["collection_name"]
     print("MongoDB connected")
 except:
     print("Not connect to MongoDB")
@@ -31,7 +31,7 @@ bot = Settings.bot
 async def on_ready():
     print(" Бот вошел как: {0.user}".format(bot))
 
-
+#Создание новых голосовых каналов
 @bot.event
 async def on_voice_state_update(member, before, after):
     if after.channel != None:
@@ -48,7 +48,7 @@ async def on_voice_state_update(member, before, after):
             await bot.wait_for("voice_state_update", check=check)
             await channel_2.delete()
 
-
+#Фильтр чата и прибавление баллов за каждое сообщение
 @bot.event
 async def on_message(message):
     await bot.process_commands(message)
@@ -76,7 +76,7 @@ async def on_message(message):
     bal = int(bal) + 1
     coll.update_one({"_id": id}, {"$set": {"balance": bal, "messages": messages}})
 
-
+#Парсинг новостей с news.rambler.ru
 @bot.command(aliasess=[])
 async def news(ctx):
     res = requests.get("https://news.rambler.ru")
@@ -87,7 +87,7 @@ async def news(ctx):
     emb = discord.Embed(title=top, description="Новость дня", color=0xff0000)
     await ctx.send(embed=emb)
 
-
+#Время и дата
 @bot.command(aliases=["day", "datetime"])
 async def time(ctx):
     dt = datetime.datetime.now()
@@ -97,7 +97,7 @@ async def time(ctx):
     emb.add_field(name="Время [Часовой пояс]", value=time, inline=False)
     await ctx.send(embed=emb)
 
-
+#Помощь с командами
 @bot.command(aliases=["помоги мне", "помоги", "команды"])
 async def helpme(ctx):
     await ctx.message.add_reaction('✅')
@@ -111,7 +111,7 @@ async def helpme(ctx):
     emb.add_field(name="!roll - Рулетка", value="Чётное число - победа,\nнечётное - проигрыш\n[Пример: !roll 100]")
     await ctx.send(embed=emb)
 
-
+#Просмотр команд администратора
 @bot.command(aliases=["инфо"])
 @commands.has_permissions(administrator=True)
 async def admin(ctx):
@@ -123,7 +123,7 @@ async def admin(ctx):
     emb.add_field(name="!mute", value="Мут участника [Пример: !mute 5m @name]", inline=True)
     await ctx.send(embed=emb)
 
-
+#Информация о пользователе
 @bot.command()
 async def info(ctx, member: discord.Member):
     mention = []
@@ -148,34 +148,13 @@ async def info(ctx, member: discord.Member):
     emb.add_field(name="Сообщения", value=msg, inline=False)
     await ctx.send(embed=emb)
 
-
-@bot.command(aliases=["баланс"])
-async def balance(ctx, member: discord.Member):
-    if not member:
-        m_id = ctx.author.id
-        user = ctx.author.display_name
-    else:
-        m_id = ctx.author.id
-        user = ctx.author.display_name
-    if coll.count_documents({"_id": m_id}) == 1:
-        bal = coll.find_one({"_id": m_id})["balance"]
-        emb = discord.Embed(title="Баланс:", description=bal + " Баллов", color=0xff0000)
-        await ctx.send(embed=emb)
-    else:
-        coll.insert_one({"_id": m_id, "name": user, "balance": 10, "messages": 0})
-        bal = coll.find_one({"_id": m_id})["balance"]
-        emb = discord.Embed(title="Баланс", description=str(bal) + " баллов", color=0xff0000)
-        await ctx.send(embed=emb)
-    await ctx.message.add_reaction('✅')
-
-
-
+#Очистка чата
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def clear(ctx, amount=100):
     await ctx.channel.purge(limit=amount)
 
-
+#Кик
 @bot.command(aliases=["Кикни", "Кик", "кикни", "кик"])
 @commands.has_permissions(administrator=True)
 async def kick(ctx, member: discord.Member, *, reason=None):
@@ -184,7 +163,7 @@ async def kick(ctx, member: discord.Member, *, reason=None):
     emb = discord.Embed(title="Кик участника:", description=member.display_name, color=0xff0000)
     await ctx.send(embed=emb)
 
-
+#Бан
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def ban(ctx, member: discord.Member, reason):
@@ -193,7 +172,7 @@ async def ban(ctx, member: discord.Member, reason):
     emb = discord.Embed(title="Бан участника:", description=member.display_name, color=0xff0000)
     await ctx.send(embed=emb)
 
-
+#Мут
 @bot.command(aliases=["мут"])
 @commands.has_permissions(administrator=True)
 async def mute(ctx, limit, member: discord.Member):
@@ -224,7 +203,7 @@ async def mute(ctx, limit, member: discord.Member):
     emb = discord.Embed(title=b, description=member.display_name, color=0xff0000)
     await ctx.send(embed=emb)
 
-
+#Благодарность за помощь(добавление баллов)
 @discord.ext.commands.cooldown(1, 1800)
 @bot.command(aliases=["rep"])
 async def repup(ctx, member: discord.Member):
@@ -249,7 +228,7 @@ async def repup_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CommandOnCooldown):
         await ctx.send("Вы не можете вызывать эту команду чаще чем раз в пол часа!")
 
-
+#Перевод баллов
 @bot.command(aliases=[])
 async def transfer(ctx, limit: int, member: discord.Member):
     a_id = ctx.author.id
@@ -272,7 +251,7 @@ async def transfer(ctx, limit: int, member: discord.Member):
         coll.insert_one({"_id": a_id, "name": user, "balance": 0, "messages": 0})
         await ctx.send("У тебя 0 баллов!")
 
-
+#Игра в кости
 @bot.command(aliases=["dices"])
 async def dice(ctx, limit: int):
     m_id = ctx.author.id
