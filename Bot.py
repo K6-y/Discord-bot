@@ -11,7 +11,7 @@ bad_words = []
 
 
 class Settings:
-    token = "token"
+    token = "bot_token"
     bot = commands.Bot(command_prefix="!")
 
 
