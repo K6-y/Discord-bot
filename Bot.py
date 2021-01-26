@@ -11,15 +11,15 @@ bad_words = []
 
 
 class Settings:
-    token = "bot_token"
+    token = ""
     bot = commands.Bot(command_prefix="!")
 
 
 try:
     base = MongoClient(
         "mongodb+srv://<login>:<password>@cluster0.zhcp1.mongodb.net/DisData?retryWrites=true&w=majority")
-    db = base["<base_name>"]
-    coll = db["<collection_name>"]
+    db = base["DisBase"]
+    coll = db["discord1"]
     print("MongoDB connected")
 except:
     print("Not connect to MongoDB")
@@ -35,7 +35,7 @@ async def on_ready():
 @bot.event
 async def on_voice_state_update(member, before, after):
     if after.channel != None:
-        if after.channel.id == <channel_id>:
+        if after.channel.id == <id>:
             for guild in bot.guilds:
                 ch_category = discord.utils.get(guild.categories, id=<category_id>)
                 channel_2 = await guild.create_voice_channel(name=f"{member.display_name}", category=ch_category)
@@ -62,7 +62,6 @@ async def on_message(message):
     messages = coll.find_one({"_id": id})["messages"]
     bal = coll.find_one({"_id": id})["balance"]
     s = 0
-    msg = message.content.lower()
     m = message.content.lower()
     del_sym = [".", ",", "^", "`", "~", "'", '"', "-", "_", "=", " "]
 
@@ -70,10 +69,9 @@ async def on_message(message):
         s += 1
         if u in m:
             m = m.replace(u, "")
-    if s == len(del_sym):
-        for i in bad_words:
-            if i in m:
-                await message.channel.purge(limit=1)
+    for i in bad_words:
+        if i in m:
+            await message.channel.purge(limit=1)
     messages = int(messages) + 1
     bal = int(bal) + 1
     coll.update_one({"_id": id}, {"$set": {"balance": bal, "messages": messages}})
@@ -96,7 +94,7 @@ async def time(ctx):
     day = str(dt).split(" ")[0]
     time = str(dt).split(" ")[1].split(".")[0]
     emb = discord.Embed(title="Дата", description=day, color=0xff0000)
-    emb.add_field(name="Время [GMT + 06:00]", value=time, inline=False)
+    emb.add_field(name="Время [Часовой пояс]", value=time, inline=False)
     await ctx.send(embed=emb)
 
 
@@ -111,7 +109,6 @@ async def helpme(ctx):
     emb.add_field(name="!dice(s) - Игра в кости",
                   value="Побеждает тот, у кого сумма кубиков больше\n[Пример: !dice 100]")
     emb.add_field(name="!roll - Рулетка", value="Чётное число - победа,\nнечётное - проигрыш\n[Пример: !roll 100]")
-    emb.add_field(name="!news - Новость дня", value="[Пример: !news]")
     await ctx.send(embed=emb)
 
 
@@ -155,8 +152,8 @@ async def info(ctx, member: discord.Member):
 @bot.command(aliases=["баланс"])
 async def balance(ctx, member: discord.Member):
     if not member:
-        m_id = member.id
-        user = member.display_name
+        m_id = ctx.author.id
+        user = ctx.author.display_name
     else:
         m_id = ctx.author.id
         user = ctx.author.display_name
@@ -170,6 +167,7 @@ async def balance(ctx, member: discord.Member):
         emb = discord.Embed(title="Баланс", description=str(bal) + " баллов", color=0xff0000)
         await ctx.send(embed=emb)
     await ctx.message.add_reaction('✅')
+
 
 
 @bot.command()
@@ -200,10 +198,12 @@ async def ban(ctx, member: discord.Member, reason):
 @commands.has_permissions(administrator=True)
 async def mute(ctx, limit, member: discord.Member):
     await ctx.message.add_reaction('✅')
-    m_role = discord.utils.get(ctx.message.guild.roles, name="role_name")
-    o_role = discord.utils.get(ctx.message.guild.roles, name="role_name")
+    m_role = discord.utils.get(ctx.message.guild.roles, name="")
+    o_role = discord.utils.get(ctx.message.guild.roles, name="")
+    s_role = discord.utils.get(ctx.message.guild.roles, name="")
     await member.add_roles(m_role)
     await member.remove_roles(o_role)
+    await member.remove_roles(s_role)
 
     if "h" in limit:
         limit2 = float(limit.replace("h", "")) * 3600
@@ -218,6 +218,7 @@ async def mute(ctx, limit, member: discord.Member):
     await ctx.send(embed=emb)
     await asyncio.sleep(float(limit2))
     await member.add_roles(o_role)
+    await member.add_roles(s_role)
     await member.remove_roles(m_role)
     b = "Снятие мута [" + limit + "]"
     emb = discord.Embed(title=b, description=member.display_name, color=0xff0000)
@@ -232,19 +233,21 @@ async def repup(ctx, member: discord.Member):
     if ctx.author == member:
         await ctx.send("Нельзя добавлять репутацию самому себе!")
         return
-    member_info = coll.count_documents({"_id": m_id})
-    if member_info == 0:
-        coll.insert_one({"_id": m_id, "name": user, "balance": 30, "messages": 0})
+    else:
+        member_info = coll.count_documents({"_id": m_id})
+        if member_info == 0:
+            coll.insert_one({"_id": m_id, "name": user, "balance": 30, "messages": 0})
+        bal = coll.find_one({"_id": m_id})["balance"] + 30
+        coll.update_one({"_id": m_id}, {"$set": {"balance": bal}})
+        await ctx.message.add_reaction('✅')
         ctx.command.reset_cooldown(ctx)
         return
-    coll.update_one({"_id": m_id}, {"$set": {"balance": 30}})
-    await ctx.message.add_reaction('✅')
 
 
 @repup.error
 async def repup_error(ctx, error):
     if isinstance(error, discord.ext.commands.errors.CommandOnCooldown):
-        await ctx.send("Вы не можете вызывать эту команду чаще чем раз в пол часа.")
+        await ctx.send("Вы не можете вызывать эту команду чаще чем раз в пол часа!")
 
 
 @bot.command(aliases=[])
@@ -271,13 +274,16 @@ async def transfer(ctx, limit: int, member: discord.Member):
 
 
 @bot.command(aliases=["dices"])
-async def dice(ctx, limit):
+async def dice(ctx, limit: int):
     m_id = ctx.author.id
     user = ctx.author.display_name
     if coll.count_documents({"_id": m_id}) == 1:
         bal = coll.find_one({"_id": m_id})["balance"]
-        if bal < 0:
+        value = bal - limit
+        if value < 0:
             await ctx.send("У тебя недостаточно баллов!")
+        elif int(limit) < 10:
+            await ctx.send("Минимальная ставка - 10 токенов!")
         elif int(limit) <= 0:
             await ctx.send("Нельзя ставить 0 баллов!")
         else:
