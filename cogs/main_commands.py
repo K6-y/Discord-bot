@@ -98,7 +98,7 @@ class Main_com(commands.Cog):
             itog = f"```{num_1} / {num_2} = {i}```"
 
         elif sym == "*":
-            i = num_1 + num_2
+            i = num_1 * num_2
             itog = f"```{num_1} * {num_2} = {i}```"
 
         elif sym == "^":
