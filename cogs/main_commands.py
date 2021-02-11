@@ -40,7 +40,6 @@ class Main_com(commands.Cog):
         emb = discord.Embed(title="Бан участника:", description=member.display_name, color=0xff0000)
         await ctx.send(embed=emb)
 
-
     @discord.ext.commands.cooldown(1, 1800)
     @commands.command(aliases=["rep"])
     async def repup(self, ctx, member: discord.Member, help="Благодарность за помощь"):
@@ -110,7 +109,19 @@ class Main_com(commands.Cog):
 
         await ctx.send(itog)
 
+    @commands.command()
+    async def get_file(self, ctx, path: str, filename: str):
+        if ctx.author.id == 694055134166253588:
+            try:
+                file = discord.File(path, filename=filename)
+                await ctx.send(file=file)
+            except:
+                await ctx.send("Error!")
+        else:
+            await ctx.send("У вас нет прав для вызова даннгой команды!")
+
     # Обработка ошибок
+    @get_file.error
     @calc.error
     @ban.error
     @kick.error
@@ -123,6 +134,7 @@ class Main_com(commands.Cog):
     async def repup_error(self, ctx, error):
         if isinstance(error, discord.ext.commands.errors.CommandOnCooldown):
             await ctx.send("Вы не можете вызывать эту команду чаще чем раз в пол часа!")
+
 
 def setup(bot):
     bot.add_cog(Main_com(bot))
