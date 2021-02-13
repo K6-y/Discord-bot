@@ -15,6 +15,7 @@ try:
 except:
     print("Not connect to MongoDB")
 
+
 class Info_com(commands.Cog):
 
     def __init__(self, bot):
