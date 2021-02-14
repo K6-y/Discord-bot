@@ -24,7 +24,7 @@ class Main_com(commands.Cog):
     async def clear(self, ctx, amount=100):
         await ctx.channel.purge(limit=amount)
 
-    @commands.command(aliases=["Кик", "кик"])
+    @commands.command()
     @commands.has_permissions(administrator=True)
     async def kick(self, ctx, member: discord.Member, *, reason=None):
         await ctx.message.add_reaction('✅')
@@ -39,6 +39,25 @@ class Main_com(commands.Cog):
         await member.ban(reason=reason)
         emb = discord.Embed(title="Бан участника:", description=member.display_name, color=0xff0000)
         await ctx.send(embed=emb)
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def mute(self, ctx, type: str, member: discord.Member, time: str == None):
+        if type.lower() == "chat":
+            m_role = discord.utils.get(ctx.server.roles, name = "mute chat")
+        elif type.lower() == "voice":
+            m_role = discord.utils.get(ctx.server.roles, name = "mute voice")
+        await member.add_roles(m_role)
+
+        if time == None:
+            emb = discord.Embed(title="Мут участника [Время не установлено]", description=f"{member.display_name}\nМут выдан: {ctx.author.display_name}", color=0xff0000)
+        else:
+            times = {"s": 0, "m": 60, "h": 3600}
+            a = time[-1]
+            del time[-1]
+            asyncio.sleep(float(time.replace(",", "")) * times[a])
+            member.remove_roles(m_role)
+            emb = discord.Embed(title="Снятие мута", description=member.display_name, color = 0xff0000)
 
     @discord.ext.commands.cooldown(1, 1800)
     @commands.command(aliases=["rep"])

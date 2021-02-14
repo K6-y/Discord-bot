@@ -31,16 +31,6 @@ class Info_com(commands.Cog):
         emb = discord.Embed(title=f"Зараженных на {date}", description=f"{world.text}\n{russia.text}", color=0xff0000)
         await ctx.send(embed=emb)
 
-    @commands.command()
-    async def news(self, ctx):
-        res = requests.get("https://news.rambler.ru")
-        html = res.text
-        soup = BeautifulSoup(html, "html.parser")
-        top_news = soup.find("div", class_="top-hot-card__title")
-        top = top_news.text
-        emb = discord.Embed(title=top, description="Новость дня", color=0xff0000)
-        await ctx.send(embed=emb)
-
     @commands.command(aliases=["day", "datetime"])
     async def time(self, ctx, help="Текущее время и дата"):
         dt = datetime.datetime.now()
