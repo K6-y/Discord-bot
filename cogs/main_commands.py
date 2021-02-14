@@ -42,22 +42,25 @@ class Main_com(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def mute(self, ctx, type: str, member: discord.Member, time: str == None):
+    async def mute(self, ctx, type: str, member: discord.Member, time=None):
         if type.lower() == "chat":
-            m_role = discord.utils.get(ctx.server.roles, name = "mute chat")
+            m_role = discord.utils.get(ctx.server.roles, name="mute chat")
         elif type.lower() == "voice":
-            m_role = discord.utils.get(ctx.server.roles, name = "mute voice")
+            m_role = discord.utils.get(ctx.server.roles, name="mute voice")
         await member.add_roles(m_role)
 
-        if time == None:
-            emb = discord.Embed(title="Мут участника [Время не установлено]", description=f"{member.display_name}\nМут выдан: {ctx.author.display_name}", color=0xff0000)
+        if time != None:
+            emb = discord.Embed(title="Мут участника [Время не установлено]",
+                                description=f"{member.display_name}\nМут выдан: {ctx.author.display_name}",
+                                color=0xff0000)
         else:
             times = {"s": 0, "m": 60, "h": 3600}
             a = time[-1]
             del time[-1]
             asyncio.sleep(float(time.replace(",", "")) * times[a])
             member.remove_roles(m_role)
-            emb = discord.Embed(title="Снятие мута", description=member.display_name, color = 0xff0000)
+            emb = discord.Embed(title="Снятие мута", description=member.display_name, color=0xff0000)
+            await ctx.send(emb = embed)
 
     @discord.ext.commands.cooldown(1, 1800)
     @commands.command(aliases=["rep"])
