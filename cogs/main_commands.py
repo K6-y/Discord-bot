@@ -34,7 +34,7 @@ class Main_com(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def ban(self, ctx, member: discord.Member, reason, help="Бан участника"):
+    async def ban(self, ctx, member: discord.Member, reason):
         await ctx.message.add_reaction('✅')
         await member.ban(reason=reason)
         emb = discord.Embed(title="Бан участника:", description=member.display_name, color=0xff0000)
@@ -64,7 +64,7 @@ class Main_com(commands.Cog):
 
     @discord.ext.commands.cooldown(1, 1800)
     @commands.command(aliases=["rep"])
-    async def repup(self, ctx, member: discord.Member, help="Благодарность за помощь"):
+    async def repup(self, ctx, member: discord.Member):
         m_id = member.id
         user = member.display_name
         if ctx.author == member:
@@ -82,7 +82,7 @@ class Main_com(commands.Cog):
             return
 
     @commands.command(aliases=[])
-    async def transfer(self, ctx, limit: int, member: discord.Member, help="Перевод баллов"):
+    async def transfer(self, ctx, limit: int, member: discord.Member):
         a_id = ctx.author.id
         m_id = member.id
         user = ctx.author.display_name
